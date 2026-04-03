@@ -119,7 +119,6 @@ Farm Data → AI Scoring Engine → Credit Generation → Marketplace Listing
 - PostgreSQL v14+ · External API keys (Satellite, Payment Gateway, Notifications)
 
 ### Setup
-See [`docs/setup/local-development.md`](docs/setup/local-development.md) for full instructions.
 
 ```bash
 git clone https://github.com/your-org/carbon-kisan-credit.git
