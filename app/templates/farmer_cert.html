@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Carbon E-Certificate</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; padding: 40px; background-color: #f4fdf4; }
+        .certificate { border: 5px solid #2e7d32; padding: 40px; text-align: center; background: white; border-radius: 10px; }
+        h1 { color: #2e7d32; font-size: 36px; }
+        .data { font-size: 24px; margin: 20px 0; color: #333; }
+        .value { color: #155724; font-weight: bold; }
+        .footer { margin-top: 50px; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <h1>Carbon-Kisan Verified Asset</h1>
+        <p>This certifies that the agricultural land owned by</p>
+        <div class="data"><strong>{{ name }}</strong></div>
+        <hr style="width: 50%; border: 1px solid #2e7d32;">
+        
+        <p>Has been verified via Sentinel-2 Satellite MRV with the following carbon potential:</p>
+        <div class="data">Land Area: <span class="value">{{ area }} Hectares</span></div>
+        <div class="data">Carbon Sequestered: <span class="value">{{ tonnes }} Tonnes CO2e</span></div>
+        <div class="data">Asset Value: <span class="value">₹{{ value }}</span></div>
+        
+        <div class="footer">
+            Certificate ID: {{ cert_id }} | Issued by Carbon-Kisan Engine
+        </div>
+    </div>
+</body>
+</html>
