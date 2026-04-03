@@ -96,27 +96,7 @@ Farm Data → AI Scoring Engine → Credit Generation → Marketplace Listing
 
 ---
 
-## Technologies Inferred
-
-| Technology | Usage |
-|---|---|
-| Satellite Data APIs (e.g., Sentinel Hub) | Remote sensing for farm verification and AI input |
-| UPI | Domestic real-time payment rail for farmer disbursements |
-| Stripe-compatible Gateway | International business payment processing |
-| SMS/Email Provider (e.g., Twilio, MSG91) | Transactional notifications for both user types |
-| RESTful API Gateway | Centralized routing, rate limiting, and auth for microservices |
-| PostgreSQL / Document DB | Structured persistence across four operational databases |
-| Python ML Framework (TensorFlow / scikit-learn) | Carbon Scoring and Recommendation Engine training |
-| PDF Generation (e.g., Puppeteer, WeasyPrint) | Digital certificate and report rendering |
-| ETL Pipeline (e.g., Airflow) | Satellite and farmer data ingestion and normalization |
-
----
-
 ## Getting Started
-
-### Prerequisites
-- Node.js v18+ · Python 3.10+ · Docker & Docker Compose
-- PostgreSQL v14+ · External API keys (Satellite, Payment Gateway, Notifications)
 
 ### Setup
 
@@ -137,14 +117,9 @@ docker-compose up --build
 
 ---
 
-## Contributing
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Submit issues with labels: `bug`, `enhancement`, `ai-model`, `frontend`, `backend`.
 
 ## License
 [MIT License](LICENSE)
-
-## Contact
-Open a GitHub Discussion or email `maintainer@email.com` for inquiries. See [`SECURITY.md`](SECURITY.md) for vulnerability reporting.
 
 ---
 *Carbon-Kisan Credit — Turning sustainable farming into climate action.*
