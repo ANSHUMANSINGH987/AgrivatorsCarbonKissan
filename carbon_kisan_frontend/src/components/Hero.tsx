@@ -1,6 +1,6 @@
 export default function Hero() {
   return (
-    <section className="relative w-full min-h-screen flex items-center justify-center px-6 pt-28 pb-16 z-20">
+    <section className="relative w-full min-h-screen flex items-center justify-center px-6 pt-40 pb-16 z-20">
       <div className="w-full max-w-7xl text-center relative">
         {/* Main Heading */}
         <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-serif text-white tracking-tight leading-[1.05] mb-8 drop-shadow-[0_4px_20px_rgba(0,0,0,0.35)]">

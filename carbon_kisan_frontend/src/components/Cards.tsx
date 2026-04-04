@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function Cards() {
@@ -16,10 +17,13 @@ export default function Cards() {
         </div>
 
         {/* Farm Illustration */}
-        <div className="w-32 h-20 mb-6 mt-4 relative">
-          <div className="absolute inset-0 bg-green-200/30 rounded-xl shadow-inner border border-white/40 flex items-center justify-center">
-            <span className="text-green-600 font-serif text-2xl">🌾</span>
-          </div>
+        <div className="w-40 h-32 mb-6 mt-4 relative overflow-hidden rounded-xl">
+          <Image
+            src="/farmer.png"
+            alt="Farmer"
+            fill
+            className="object-cover"
+          />
         </div>
 
         <h2 className="text-3xl font-bold text-white mb-2">I'm a <span className="text-[#9ed28f]">Farmer</span></h2>
@@ -28,7 +32,7 @@ export default function Cards() {
         {/* Button */}
         <div className="mt-auto w-full">
           <button
-            onClick={() => router.push('/farmer/auth')}
+            onClick={() => router.push('/dashboard')}
             className="w-full py-4 rounded-xl font-bold text-lg shadow-lg bg-[#9ed28f] text-gray-900 hover:bg-white transition-all duration-300 border border-white/40"
           >
             Get Started as Farmer
@@ -46,10 +50,13 @@ export default function Cards() {
         </div>
 
         {/* City Illustration */}
-        <div className="w-32 h-20 mb-6 mt-4 relative">
-          <div className="absolute inset-0 bg-blue-200/30 rounded-xl shadow-inner border border-white/40 flex items-center justify-center">
-            <span className="text-blue-400 font-serif text-2xl">🏢</span>
-          </div>
+        <div className="w-40 h-32 mb-6 mt-4 relative overflow-hidden rounded-xl">
+          <Image
+            src="/business.png"
+            alt="Business"
+            fill
+            className="object-cover"
+          />
         </div>
 
         <h2 className="text-3xl font-bold text-white mb-2">I'm a <span className="text-blue-300">Business</span></h2>
@@ -58,7 +65,7 @@ export default function Cards() {
         {/* Button */}
         <div className="mt-auto w-full">
           <button
-            onClick={() => router.push('/business/auth')}
+            onClick={() => router.push('/business')}
             className="w-full py-4 rounded-xl font-bold text-lg shadow-lg bg-blue-400 text-gray-900 hover:bg-white transition-all duration-300 border border-white/40"
           >
             Get Started as Business

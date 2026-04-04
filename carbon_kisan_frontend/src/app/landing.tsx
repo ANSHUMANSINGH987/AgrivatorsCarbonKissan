@@ -1,5 +1,6 @@
 'use client';
 
+import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Cards from '@/components/Cards';
 import Footer from '@/components/Footer';
@@ -24,6 +25,7 @@ export default function Landing() {
 
       {/* Main Content */}
       <div className="relative z-20 w-full">
+        <Navbar />
         <Hero />
         <Cards />
         <Footer />
