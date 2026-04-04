@@ -1,5 +1,6 @@
 
-![Carbon_Kisaan_logo_](https://github.com/user-attachments/assets/c94be3f9-ccab-4a21-85be-bee1de3041dd)
+![da66cf8a-0851-4cbc-9239-23cac456faa4](https://github.com/user-attachments/assets/5ff02a4e-781a-44ff-b020-e77ae987381c)
+
 
 
 # 🌱 Carbon-Kisan Credit — Climate-Tech Carbon Marketplace
@@ -35,6 +36,21 @@ Carbon-Kisan Credit provides:
 - **Full auditability** — every credit is linked to a specific farm parcel, GPS coordinates, and a time-stamped satellite scan.
 - **Direct social impact** — purchases demonstrably improve farmer livelihoods, enabling companies to report both carbon and ESG impact from a single transaction.
 - **Competitive pricing** by eliminating the layers of brokers and intermediaries typical in traditional carbon markets.
+
+---
+
+## The Math Behind the Magic 🔬
+
+Real Soil Organic Carbon (SOC) verification requires deep physical soil sampling. However, biomass (how healthy and dense the plants are) directly correlates with the amount of carbon being sequestered into the soil via roots and decaying matter. We use **NDVI** as the measure of biomass.
+
+In the `_extrapolate_carbon` function, we utilize a simplified linear regression formula often found in remote sensing preliminary studies:
+
+$$SOC = \alpha \times NDVI_{mean} + \beta$$
+
+Where:
+- **SOC** is the Soil Organic Carbon in tonnes per hectare.
+- **NDVI_mean** is the average vegetation index for the farm over a year.
+- **α** and **β** are correlation constants (which you can adjust to calibrate your model if you introduce hardware sensor data later).
 
 ---
 
