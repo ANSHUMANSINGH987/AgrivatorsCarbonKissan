@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Leaf, Activity, Wind, IndianRupee, FileText, ChevronRight, AlertCircle, Loader, MapPin, Wallet, Award, MessageSquare, Settings, LogOut } from 'lucide-react';
+import { Leaf, Activity, Wind, IndianRupee, FileText, ChevronRight, AlertCircle, Loader, MapPin, Wallet, Award, LogOut } from 'lucide-react';
 import KisanSaathiChat from '@/components/chat/KisanSaathiChat';
 import CertificatesPanel from '@/components/certificates/CertificatesPanel';
 
@@ -16,7 +16,7 @@ const FarmMap = dynamic(() => import('@/components/map/FarmMap'), {
 const API_BASE = 'http://localhost:8000/api';
 
 type LoadingStage = 'idle' | 'connecting' | 'calculating' | 'saving';
-type TabType = 'dashboard' | 'my-farms' | 'earnings' | 'certificates' | 'messages' | 'settings';
+type TabType = 'dashboard' | 'my-farms' | 'earnings' | 'certificates';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [dailyInsights, setDailyInsights] = useState<string[]>([]);
   const [isLoadingInsights, setIsLoadingInsights] = useState(true);
+  const [certificates, setCertificates] = useState<any[]>([]);
+  const [certificateRefresh, setCertificateRefresh] = useState(0);
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -56,6 +58,26 @@ export default function Dashboard() {
     };
     fetchInsights();
   }, []);
+
+  // Fetch certificates from backend
+  const fetchCertificates = async (farmerId: string = "demo_farmer_001") => {
+    try {
+      const response = await fetch(`${API_BASE}/docs/certificates/${farmerId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.certificates) {
+          setCertificates(data.certificates);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch certificates:", error);
+    }
+  };
+
+  // Fetch certificates when component mounts or refresh is triggered
+  useEffect(() => {
+    fetchCertificates();
+  }, [certificateRefresh]);
 
   const handleMapClick = async (lat: number, lon: number) => {
     try {
@@ -145,6 +167,11 @@ export default function Dashboard() {
       setMrvResults(data);
       setErrorToast(null);
       
+      // Refresh certificates after saving
+      setTimeout(() => {
+        setCertificateRefresh(prev => prev + 1);
+      }, 1000);
+      
     } catch (error: any) {
       let errorMsg = "Failed to analyze farm";
 
@@ -221,8 +248,6 @@ export default function Dashboard() {
               { id: 'my-farms', label: 'My Farms', icon: MapPin },
               { id: 'earnings', label: 'Earnings', icon: Wallet },
               { id: 'certificates', label: 'Certificates', icon: Award },
-              { id: 'messages', label: 'Messages', icon: MessageSquare },
-              { id: 'settings', label: 'Settings', icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon as any;
               return (
@@ -540,54 +565,97 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Earnings Tab - Placeholder */}
+            {/* Earnings Tab */}
             {activeTab === 'earnings' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-2xl p-8 border border-green-100 shadow-md text-center">
-                  <Wallet className="mx-auto mb-4 text-green-600" size={48} />
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Earnings</h2>
-                  <p className="text-gray-600">Carbon credit earnings and payment history coming soon.</p>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
+                    <IndianRupee className="text-green-600 mb-2" size={24} />
+                    <p className="text-sm text-gray-600">Total Earnings</p>
+                    <p className="text-3xl font-bold text-green-900">
+                      ₹{certificates.reduce((sum, cert) => sum + (cert.estimated_value_inr || 0), 0).toLocaleString()}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
+                    <Wind className="text-blue-600 mb-2" size={24} />
+                    <p className="text-sm text-gray-600">Total Carbon</p>
+                    <p className="text-3xl font-bold text-blue-900">
+                      {certificates.reduce((sum, cert) => sum + (cert.estimated_carbon_tonnes || 0), 0).toFixed(1)} T
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
+                    <Award className="text-amber-600 mb-2" size={24} />
+                    <p className="text-sm text-gray-600">Certificates</p>
+                    <p className="text-3xl font-bold text-amber-900">{certificates.length}</p>
+                  </div>
+                  
+                  <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
+                    <Leaf className="text-green-600 mb-2" size={24} />
+                    <p className="text-sm text-gray-600">Farm Area</p>
+                    <p className="text-3xl font-bold text-green-900">
+                      {certificates.reduce((sum, cert) => sum + (cert.farm_area_hectares || 0), 0).toFixed(1)} ha
+                    </p>
+                  </div>
                 </div>
+
+                {/* Earnings Breakdown */}
+                {certificates.length > 0 ? (
+                  <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-md">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Earnings Breakdown</h2>
+                    <div className="space-y-3">
+                      {certificates.map((cert, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-100">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">{cert.location_name || 'Farm Certificate'}</p>
+                            <p className="text-sm text-gray-500">
+                              {cert.farm_area_hectares} ha • {cert.estimated_carbon_tonnes} tonnes CO₂
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-600">₹{cert.estimated_value_inr?.toLocaleString()}</p>
+                            <p className="text-xs text-gray-500">{new Date(cert.timestamp).toLocaleDateString('en-IN')}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl p-8 border border-green-100 shadow-md text-center">
+                    <Wallet className="mx-auto mb-4 text-green-600" size={48} />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">No Earnings Yet</h2>
+                    <p className="text-gray-600">Analyze your farm to generate carbon credits and start earning.</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Certificates Tab - Placeholder */}
+            {/* Certificates Tab */}
             {activeTab === 'certificates' && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-md">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Award className="w-8 h-8 text-green-600" />
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">My Certificates</h2>
-                      <p className="text-sm text-gray-600">View and download your verified carbon certificates</p>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <Award className="w-8 h-8 text-green-600" />
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">My Certificates</h2>
+                        <p className="text-sm text-gray-600">View and download your verified carbon certificates</p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setCertificateRefresh(prev => prev + 1)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm"
+                    >
+                      ↻ Refresh
+                    </button>
                   </div>
-                  <CertificatesPanel farmerId="demo_farmer_001" />
+                  <CertificatesPanel farmerId="demo_farmer_001" refreshTrigger={certificateRefresh} />
                 </div>
               </div>
             )}
 
-            {/* Messages Tab - Placeholder */}
-            {activeTab === 'messages' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl p-8 border border-green-100 shadow-md text-center">
-                  <MessageSquare className="mx-auto mb-4 text-blue-600" size={48} />
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Messages</h2>
-                  <p className="text-gray-600">Communication with support and program updates coming soon.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Settings Tab - Placeholder */}
-            {activeTab === 'settings' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl p-8 border border-green-100 shadow-md text-center">
-                  <Settings className="mx-auto mb-4 text-gray-600" size={48} />
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Settings</h2>
-                  <p className="text-gray-600">Profile and account settings coming soon.</p>
-                </div>
-              </div>
-            )}
           </div>
         </main>
       </div>

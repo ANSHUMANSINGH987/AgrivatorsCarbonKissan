@@ -16,9 +16,10 @@ interface Certificate {
 
 interface CertificatesPanelProps {
   farmerId?: string;
+  refreshTrigger?: number;
 }
 
-export default function CertificatesPanel({ farmerId = "demo_farmer_001" }: CertificatesPanelProps) {
+export default function CertificatesPanel({ farmerId = "demo_farmer_001", refreshTrigger = 0 }: CertificatesPanelProps) {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
@@ -27,7 +28,7 @@ export default function CertificatesPanel({ farmerId = "demo_farmer_001" }: Cert
 
   useEffect(() => {
     fetchCertificates();
-  }, [farmerId]);
+  }, [farmerId, refreshTrigger]);
 
   const fetchCertificates = async () => {
     try {
