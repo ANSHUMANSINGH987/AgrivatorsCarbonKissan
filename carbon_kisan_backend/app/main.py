@@ -25,6 +25,23 @@ async def startup_event():
     # 1. Initialize Firebase
     initialize_firebase()
     
+    # Test Firebase connectivity
+    try:
+        from app.core.firebase import get_db
+        db = get_db()
+        print("[OK] Firebase database connection verified")
+        
+        # Try to write a test document
+        db.collection("system_test").document("startup_test").set({
+            "status": "Firebase is working",
+            "timestamp": "2026-04-05"
+        })
+        print("[OK] Firebase write test successful")
+    except RuntimeError:
+        print("[WARNING] Firebase not initialized - database features disabled")
+    except Exception as e:
+        print(f"[ERROR] Firebase connection failed: {e}")
+    
     # 2. Initialize Earth Engine
     try:
         ee.Initialize(project=settings.GEE_PROJECT_ID)

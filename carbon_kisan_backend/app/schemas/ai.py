@@ -3,6 +3,8 @@ from typing import Optional, Dict
 
 class InsightsRequest(BaseModel):
     region: str = Field(..., description="The farmer's region, e.g., 'Sehore, Madhya Pradesh'")
+    latitude: Optional[float] = Field(default=None, description="Latitude of farmer's location")
+    longitude: Optional[float] = Field(default=None, description="Longitude of farmer's location")
 
 class ChatRequest(BaseModel):
     message: str = Field(..., description="The question the farmer asked in Hindi/English")

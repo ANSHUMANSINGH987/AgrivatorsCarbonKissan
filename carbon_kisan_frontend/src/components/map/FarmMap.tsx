@@ -221,7 +221,10 @@ export default function FarmMap({
   }, [flyToPosition]);
 
   // Extract polygon coordinates if geoJson is present
-  const polygonPositions = geoJson?.coordinates?.[0]?.map(
+  // For MultiPolygon: coordinates[0] = first polygon, coordinates[0][0] = exterior ring
+  const polygonPositions = geoJson?.coordinates?.[0]?.[0]?.map(
+    (coord: number[]) => [coord[1], coord[0]] as [number, number]
+  ) || geoJson?.coordinates?.[0]?.map(
     (coord: number[]) => [coord[1], coord[0]] as [number, number]
   );
 

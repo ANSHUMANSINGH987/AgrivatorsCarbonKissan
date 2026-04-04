@@ -159,3 +159,169 @@ async def list_farmer_certificates(farmer_id: str):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list certificates: {str(e)}")
+
+@router.get("/earnings/{farmer_id}")
+async def get_farmer_earnings(farmer_id: str):
+    """Calculate total earnings and carbon credits for a farmer from all certificates."""
+    try:
+        try:
+            db = get_db()
+            certs = db.collection("certificates").where("farmer_id", "==", farmer_id).stream()
+            
+            total_earnings_inr = 0
+            total_carbon_tonnes = 0
+            total_area_hectares = 0
+            certificate_count = 0
+            
+            certificate_details = []
+            
+            for doc in certs:
+                cert_data = doc.to_dict()
+                value = cert_data.get("estimated_value_inr", 0)
+                carbon = cert_data.get("estimated_carbon_tonnes", 0)
+                area = cert_data.get("farm_area_hectares", 0)
+                
+                total_earnings_inr += value
+                total_carbon_tonnes += carbon
+                total_area_hectares += area
+                certificate_count += 1
+                
+                certificate_details.append({
+                    "certificate_id": cert_data.get("certificate_id"),
+                    "location_name": cert_data.get("location_name"),
+                    "earnings_inr": value,
+                    "carbon_tonnes": carbon,
+                    "area_hectares": area,
+                    "timestamp": cert_data.get("timestamp")
+                })
+            
+            return {
+                "status": "success",
+                "farmer_id": farmer_id,
+                "total_earnings_inr": round(total_earnings_inr, 2),
+                "total_carbon_tonnes": round(total_carbon_tonnes, 2),
+                "total_area_hectares": round(total_area_hectares, 2),
+                "certificate_count": certificate_count,
+                "certificates": certificate_details,
+                "message": f"Farmer has earned ₹{round(total_earnings_inr, 2)} from {certificate_count} verified farms"
+            }
+        except RuntimeError:
+            # Firebase not available, return zeros
+            return {
+                "status": "success",
+                "farmer_id": farmer_id,
+                "total_earnings_inr": 0,
+                "total_carbon_tonnes": 0,
+                "total_area_hectares": 0,
+                "certificate_count": 0,
+                "certificates": [],
+                "message": "No earnings data available"
+            }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to calculate earnings: {str(e)}")
+
+@router.get("/all-certificates")
+async def get_all_certificates():
+    """Get all certificates for business dashboard - aggregated by farmer."""
+    try:
+        try:
+            db = get_db()
+            all_certs = db.collection("certificates").stream()
+            
+            # Aggregate by farmer
+            farmers_data = {}
+            total_carbon = 0
+            total_area = 0
+            total_value = 0
+            region_stats = {}
+            
+            for doc in all_certs:
+                cert_data = doc.to_dict()
+                farmer_id = cert_data.get("farmer_id", "Unknown")
+                farmer_name = cert_data.get("farmer_name", f"Farmer {farmer_id}")
+                location_name = cert_data.get("location_name", "Unknown Region")
+                carbon = cert_data.get("estimated_carbon_tonnes", 0)
+                area = cert_data.get("farm_area_hectares", 0)
+                value = cert_data.get("estimated_value_inr", 0)
+                
+                total_carbon += carbon
+                total_area += area
+                total_value += value
+                
+                # Aggregate by farmer
+                if farmer_id not in farmers_data:
+                    farmers_data[farmer_id] = {
+                        "farmer_id": farmer_id,
+                        "farmer_name": farmer_name,
+                        "region": location_name,
+                        "carbon": 0,
+                        "area": 0,
+                        "value": 0,
+                        "certificates_count": 0,
+                        "score": 85,  # Default score
+                        "grade": "A",
+                        "status": "Verified"
+                    }
+                
+                farmers_data[farmer_id]["carbon"] += carbon
+                farmers_data[farmer_id]["area"] += area
+                farmers_data[farmer_id]["value"] += value
+                farmers_data[farmer_id]["certificates_count"] += 1
+                
+                # Update score based on carbon sequestration
+                farmers_data[farmer_id]["score"] = min(95, 70 + int((carbon / 10) * 5))
+                if farmers_data[farmer_id]["score"] >= 90:
+                    farmers_data[farmer_id]["grade"] = "A+"
+                elif farmers_data[farmer_id]["score"] >= 80:
+                    farmers_data[farmer_id]["grade"] = "A"
+                else:
+                    farmers_data[farmer_id]["grade"] = "B+"
+                
+                # Aggregate by region
+                if location_name not in region_stats:
+                    region_stats[location_name] = {
+                        "region": location_name,
+                        "carbon": 0,
+                        "area": 0,
+                        "farmers": 0
+                    }
+                
+                region_stats[location_name]["carbon"] += carbon
+                region_stats[location_name]["area"] += area
+                region_stats[location_name]["farmers"] += 1
+            
+            farmers_list = list(farmers_data.values())
+            regions_list = list(region_stats.values())
+            
+            return {
+                "status": "success",
+                "summary": {
+                    "total_carbon_tonnes": round(total_carbon, 2),
+                    "total_area_hectares": round(total_area, 2),
+                    "total_value_inr": round(total_value, 2),
+                    "total_farmers": len(farmers_list),
+                    "total_regions": len(regions_list)
+                },
+                "farmers": farmers_list,
+                "regions": regions_list,
+                "message": f"Retrieved data for {len(farmers_list)} farmers"
+            }
+        except RuntimeError:
+            # Firebase not available
+            return {
+                "status": "success",
+                "summary": {
+                    "total_carbon_tonnes": 0,
+                    "total_area_hectares": 0,
+                    "total_value_inr": 0,
+                    "total_farmers": 0,
+                    "total_regions": 0
+                },
+                "farmers": [],
+                "regions": [],
+                "message": "No data available"
+            }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve all certificates: {str(e)}")

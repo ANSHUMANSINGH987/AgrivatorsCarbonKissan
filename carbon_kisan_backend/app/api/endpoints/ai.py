@@ -8,7 +8,11 @@ ai_service = AIService()
 @router.post("/daily-insights")
 async def fetch_insights(request: InsightsRequest):
     try:
-        insights = ai_service.get_daily_insights(request.region)
+        insights = ai_service.get_daily_insights(
+            region=request.region,
+            latitude=request.latitude,
+            longitude=request.longitude
+        )
         return {"status": "success", "data": insights}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -28,20 +28,88 @@ export default function Dashboard() {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [dailyInsights, setDailyInsights] = useState<string[]>([]);
   const [isLoadingInsights, setIsLoadingInsights] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number; region: string } | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
   const [certificates, setCertificates] = useState<any[]>([]);
   const [certificateRefresh, setCertificateRefresh] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
 
   useEffect(() => {
-    const fetchInsights = async () => {
+    // Request geolocation permission and fetch local farming news
+    const fetchLocalNews = async () => {
+      try {
+        setIsLoadingInsights(true);
+
+        // Request geolocation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              setLocationPermission('granted');
+
+              try {
+                // Reverse geocoding to get region from coordinates
+                const geoResponse = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                );
+                const geoData = await geoResponse.json();
+                const region = geoData.address?.state || geoData.address?.county || "Unknown Region";
+
+                setUserLocation({ lat: latitude, lon: longitude, region });
+
+                // Fetch farming news using Gemini API via backend
+                const response = await fetch(`${API_BASE}/ai/daily-insights`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    region,
+                    latitude,
+                    longitude
+                  }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const { data } = await response.json();
+                if (data && typeof data === 'string') {
+                  const lines = data.split('\n').filter((l: string) => l?.trim?.().length > 5);
+                  setDailyInsights(lines);
+                } else {
+                  setDailyInsights([]);
+                }
+              } catch (error) {
+                console.error("Failed to fetch location-based insights:", error);
+                setDailyInsights([]);
+              }
+            },
+            (error) => {
+              console.warn("Geolocation permission denied:", error);
+              setLocationPermission('denied');
+              // Fallback to default region if location access is denied
+              fetchDefaultInsights();
+            }
+          );
+        } else {
+          console.warn("Geolocation not supported");
+          setLocationPermission('denied');
+          fetchDefaultInsights();
+        }
+      } finally {
+        setIsLoadingInsights(false);
+      }
+    };
+
+    const fetchDefaultInsights = async () => {
       try {
         const response = await fetch(`${API_BASE}/ai/daily-insights`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ region: "Madhya Pradesh" }),
         });
-        
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
+
         const { data } = await response.json();
         if (data && typeof data === 'string') {
           const lines = data.split('\n').filter((l: string) => l?.trim?.().length > 5);
@@ -50,13 +118,12 @@ export default function Dashboard() {
           setDailyInsights([]);
         }
       } catch (error) {
-        console.error("Failed to fetch insights:", error);
+        console.error("Failed to fetch default insights:", error);
         setDailyInsights([]);
-      } finally {
-        setIsLoadingInsights(false);
       }
     };
-    fetchInsights();
+
+    fetchLocalNews();
   }, []);
 
   // Fetch certificates from backend
@@ -131,7 +198,9 @@ export default function Dashboard() {
       const requestPayload = {
         farmer_id: "demo_farmer_001",
         location_name: locationName || "Selected Location",
-        polygon: { coordinates: geoJson.coordinates } 
+        polygon: { 
+          coordinates: geoJson.coordinates
+        }
       };
 
       console.log("Sending MRV request:", requestPayload);
@@ -243,12 +312,12 @@ export default function Dashboard() {
           </div>
 
           <nav className="flex-1 p-4 space-y-2">
-            {[
+            {([
               { id: 'dashboard', label: 'Dashboard', icon: Activity },
               { id: 'my-farms', label: 'My Farms', icon: MapPin },
               { id: 'earnings', label: 'Earnings', icon: Wallet },
               { id: 'certificates', label: 'Certificates', icon: Award },
-            ].map((tab) => {
+            ]).map((tab) => {
               const Icon = tab.icon as any;
               return (
                 <button
@@ -276,26 +345,39 @@ export default function Dashboard() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col">
-          {/* Daily Insights Banner */}
-          <div className="w-full bg-white shadow-sm border-b border-green-100 overflow-x-auto whitespace-nowrap scrollbar-hide p-3 flex gap-4 items-center min-h-[55px]">
+        <main className="flex-1 flex flex-col h-screen">
+          {/* Daily Insights Banner with Location */}
+          <div className="w-full bg-white shadow-sm border-b border-green-100 overflow-x-auto whitespace-nowrap scrollbar-hide p-2 md:p-3 flex gap-2 md:gap-3 items-center min-h-[50px] md:min-h-[55px] flex-shrink-0">
+            {/* Location Indicator */}
+            <div className="flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200 flex-shrink-0">
+              <MapPin size={14} />
+              {userLocation ? (
+                <span>{userLocation.region}</span>
+              ) : locationPermission === 'denied' ? (
+                <span>Location Denied</span>
+              ) : (
+                <span>Detecting...</span>
+              )}
+            </div>
+
+            {/* Insights */}
             {isLoadingInsights ? (
-               <div className="text-sm text-gray-500 animate-pulse px-4 border border-gray-100 rounded-full py-1.5 bg-gray-50">Loading AI Insights...</div>
+               <div className="text-xs md:text-sm text-gray-500 animate-pulse px-3 md:px-4 border border-gray-100 rounded-full py-1 md:py-1.5 bg-gray-50 flex-shrink-0">Loading News...</div>
             ) : dailyInsights.length > 0 ? (
               dailyInsights.map((insight, idx) => (
-                <div key={idx} className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium border ${idx % 3 === 0 ? 'bg-amber-50 text-amber-800 border-amber-200' : idx % 3 === 1 ? 'bg-green-50 text-green-800 border-green-200' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
-                  ✨ {insight.replace(/^(\d+\.|-|\*)\s*/, '')}
+                <div key={idx} className={`inline-flex items-center gap-2 rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs md:text-sm font-medium border flex-shrink-0 ${idx % 3 === 0 ? 'bg-amber-50 text-amber-800 border-amber-200' : idx % 3 === 1 ? 'bg-green-50 text-green-800 border-green-200' : 'bg-blue-50 text-blue-800 border-blue-200'}`}>
+                  ✨ {insight.replace(/^(\d+\.|-|\*)\s*/, '').substring(0, 50)}
                 </div>
               ))
             ) : (
-              <div className="inline-flex items-center gap-2 bg-gray-50 text-gray-500 rounded-full px-4 py-1.5 text-sm border border-gray-200">
-                Unable to load insights today.
+              <div className="inline-flex items-center gap-2 bg-gray-50 text-gray-500 rounded-full px-3 md:px-4 py-1 md:py-1.5 text-xs md:text-sm border border-gray-200 flex-shrink-0">
+                Unable to load news.
               </div>
             )}
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto" suppressHydrationWarning>
+          <div className="flex-1 p-3 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden w-full" suppressHydrationWarning>
             {/* Dashboard Tab */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
@@ -303,35 +385,35 @@ export default function Dashboard() {
                   <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
                     <Activity className="text-green-600 mb-2" size={24} />
                     <p className="text-sm text-gray-600">Total Farms</p>
-                    <p className="text-3xl font-bold text-green-900">3</p>
+                    <p className="text-3xl font-bold text-green-900">{certificates.length}</p>
                   </div>
                   <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
                     <Leaf className="text-green-600 mb-2" size={24} />
                     <p className="text-sm text-gray-600">Total Area</p>
-                    <p className="text-3xl font-bold text-green-900">12.5 ha</p>
+                    <p className="text-3xl font-bold text-green-900">{certificates.reduce((sum, cert) => sum + (cert.farm_area_hectares || 0), 0).toFixed(1)} ha</p>
                   </div>
                   <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
                     <Wind className="text-blue-600 mb-2" size={24} />
                     <p className="text-sm text-gray-600">Est. Carbon</p>
-                    <p className="text-3xl font-bold text-blue-900">45.2 T</p>
+                    <p className="text-3xl font-bold text-blue-900">{certificates.reduce((sum, cert) => sum + (cert.estimated_carbon_tonnes || 0), 0).toFixed(1)} T</p>
                   </div>
                   <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-sm hover:shadow-md transition">
                     <IndianRupee className="text-green-700 mb-2" size={24} />
-                    <p className="text-sm text-gray-600">Potential Value</p>
-                    <p className="text-3xl font-bold text-green-800">₹2,25,000</p>
+                    <p className="text-sm text-gray-600">Total Earnings</p>
+                    <p className="text-3xl font-bold text-green-800">₹{certificates.reduce((sum, cert) => sum + (cert.estimated_value_inr || 0), 0).toLocaleString()}</p>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-md">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Stats</h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Summary</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                      <p className="text-sm text-gray-600">Last Analysis</p>
-                      <p className="text-lg font-bold text-green-900">2 days ago</p>
+                      <p className="text-sm text-gray-600">Certificates Generated</p>
+                      <p className="text-2xl font-bold text-green-900">{certificates.length}</p>
                     </div>
-                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
-                      <p className="text-sm text-gray-600">Pending Approvals</p>
-                      <p className="text-lg font-bold text-amber-900">1 Report</p>
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                      <p className="text-sm text-gray-600">Last Updated</p>
+                      <p className="text-lg font-bold text-blue-900">{new Date().toLocaleDateString('en-IN')}</p>
                     </div>
                   </div>
                 </div>
@@ -387,7 +469,7 @@ export default function Dashboard() {
                   </div>
 
                   <p className="text-xs text-gray-500 mt-3">
-                    💡 Enter your village/city name and pincode, then click "View on Map" to see the area. You can then click on the map to select your farm boundaries.
+                    💡 Enter your village/city name and pincode, then click &quot;View on Map&quot; to see the area. You can then click on the map to select your farm boundaries.
                   </p>
                 </div>
 
@@ -582,7 +664,7 @@ export default function Dashboard() {
                     <Wind className="text-blue-600 mb-2" size={24} />
                     <p className="text-sm text-gray-600">Total Carbon</p>
                     <p className="text-3xl font-bold text-blue-900">
-                      {certificates.reduce((sum, cert) => sum + (cert.estimated_carbon_tonnes || 0), 0).toFixed(1)} T
+                      {certificates.reduce((sum, cert) => sum + (cert.estimated_carbon_tonnes || 0), 0).toFixed(1)}T
                     </p>
                   </div>
                   
@@ -601,12 +683,41 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                {/* Search and Filter */}
+                {certificates.length > 0 && (
+                  <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-md">
+                    <div className="flex flex-col md:flex-row gap-3 mb-4">
+                      <input
+                        type="text"
+                        placeholder="🔍 Search by location name..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setRegionFilter('');
+                        }}
+                        className="px-6 py-2 bg-white text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Earnings Breakdown */}
                 {certificates.length > 0 ? (
                   <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-md">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Earnings Breakdown</h2>
                     <div className="space-y-3">
-                      {certificates.map((cert, idx) => (
+                      {certificates
+                        .filter(cert => 
+                          cert.location_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          cert.location_name?.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((cert, idx) => (
                         <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-100">
                           <div className="flex-1">
                             <p className="font-semibold text-gray-900">{cert.location_name || 'Farm Certificate'}</p>

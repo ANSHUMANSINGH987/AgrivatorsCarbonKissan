@@ -1,6 +1,5 @@
 'use client';
 
-import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Cards from '@/components/Cards';
 import Footer from '@/components/Footer';
@@ -16,7 +15,7 @@ export default function Landing() {
         playsInline
         className="fixed inset-0 w-full h-full object-cover z-0"
       >
-        <source src="/videos/VID_20260404_101916.mp4" type="video/mp4" />
+        <source src="/videos/background.mp4" type="video/mp4" />       
         Your browser does not support the video tag.
       </video>
 
@@ -25,7 +24,6 @@ export default function Landing() {
 
       {/* Main Content */}
       <div className="relative z-20 w-full">
-        <Navbar />
         <Hero />
         <Cards />
         <Footer />

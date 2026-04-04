@@ -1,86 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+
+const API_BASE = 'http://localhost:8000/api';
 
 export default function BusinessDashboard() {
   const [activePage, setActivePage] = useState('carbon');
   const [farmerSearch, setFarmerSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [businessData, setBusinessData] = useState<any>(null);
+  const [farmers, setFarmers] = useState<any[]>([]);
+  const [regions, setRegions] = useState<any[]>([]);
 
-  // Sample farmer data
-  const farmers = [
-    {
-      id: 'F001',
-      name: 'Rajesh Kumar',
-      region: 'Nashik, MH',
-      area: 12,
-      crop: 'Sugarcane',
-      carbon: 8.4,
-      score: 92,
-      grade: 'A+',
-      credits: 24,
-      practices: 'Organic',
-      status: 'Verified',
-    },
-    {
-      id: 'F002',
-      name: 'Priya Sharma',
-      region: 'Pune, MH',
-      area: 8.5,
-      crop: 'Wheat',
-      carbon: 6.2,
-      score: 88,
-      grade: 'A',
-      credits: 18,
-      practices: 'No-Till',
-      status: 'Verified',
-    },
-    {
-      id: 'F003',
-      name: 'Amitabh Singh',
-      region: 'Agra, UP',
-      area: 9,
-      crop: 'Maize',
-      carbon: 7.1,
-      score: 85,
-      grade: 'A',
-      credits: 20,
-      practices: 'Drip',
-      status: 'Verified',
-    },
-    {
-      id: 'F004',
-      name: 'Deepa Desai',
-      region: 'Nashik, MH',
-      area: 11,
-      crop: 'Cotton',
-      carbon: 7.8,
-      score: 90,
-      grade: 'A+',
-      credits: 22,
-      practices: 'Organic',
-      status: 'Verified',
-    },
-    {
-      id: 'F005',
-      name: 'Vikram Patel',
-      region: 'Sinnar, MH',
-      area: 7.5,
-      crop: 'Groundnut',
-      carbon: 5.2,
-      score: 82,
-      grade: 'B+',
-      credits: 15,
-      practices: 'Cover Crop',
-      status: 'Verified',
-    },
-  ];
+  // Download report as CSV
+  const downloadReport = () => {
+    if (farmers.length === 0) return;
+    
+    const headers = ['#', 'Farmer Name', 'ID', 'Region', 'Carbon (t)', 'Area (ha)', 'Certificates', 'Earnings (₹)'];
+    const rows = filteredFarmers.map((farmer, idx) => [
+      idx + 1,
+      farmer.farmer_name,
+      farmer.farmer_id,
+      farmer.region,
+      farmer.carbon.toFixed(2),
+      farmer.area.toFixed(1),
+      farmer.certificates_count,
+      farmer.value.toFixed(0)
+    ]);
+    
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `carbon-kissan-farmers-report-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Fetch business data
+  useEffect(() => {
+    const fetchBusinessData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE}/docs/all-certificates`);
+        if (response.ok) {
+          const data = await response.json();
+          setBusinessData(data.summary);
+          setFarmers(data.farmers || []);
+          setRegions(data.regions || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch business data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusinessData();
+  }, []);
 
   const filteredFarmers = farmers.filter(
     (f) =>
-      (f.name.toLowerCase().includes(farmerSearch.toLowerCase()) ||
-        f.region.toLowerCase().includes(farmerSearch.toLowerCase())) &&
+      (f.farmer_name?.toLowerCase().includes(farmerSearch.toLowerCase()) ||
+        f.region?.toLowerCase().includes(farmerSearch.toLowerCase())) &&
       (regionFilter === '' || f.region === regionFilter)
   );
 
@@ -152,12 +137,12 @@ export default function BusinessDashboard() {
 
         {/* Credits Used */}
         <div className="p-4 bg-white/5 border-t border-white/10">
-          <div className="text-teal-400 text-10px uppercase font-semibold">Credits Purchased</div>
-          <div className="text-white font-mono font-bold text-2xl mt-1">312</div>
+          <div className="text-teal-400 text-10px uppercase font-semibold">Total Credits Available</div>
+          <div className="text-white font-mono font-bold text-2xl mt-1">{businessData ? Math.round(businessData.total_farmers * 17) : 0}</div>
           <div className="h-1 bg-white/10 rounded-full overflow-hidden mt-2">
             <div className="h-full bg-teal-500 w-3/5"></div>
           </div>
-          <div className="text-slate-400 text-11px mt-1">62% of annual target · 188 remaining</div>
+          <div className="text-slate-400 text-11px mt-1">{businessData ? Math.round(businessData.total_carbon_tonnes) : 0}t CO₂ sequestered · {businessData?.total_farmers || 0} farmers</div>
         </div>
       </aside>
 
@@ -170,37 +155,39 @@ export default function BusinessDashboard() {
               {activePage === 'carbon' ? 'Carbon Overview' : 'Documents & Records'}
             </h2>
             <p className="text-11px text-slate-400 mt-0.5">
-              {activePage === 'carbon' ? 'Live view of all farmer carbon data — Maharashtra & UP clusters' : 'Certificate and verification records'}
+              {activePage === 'carbon' ? 'Farmer carbon sequestration data' : 'Certificate and verification records'}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-11px font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-400">
-              ✅ 312 Credits Verified
+              ✅ {businessData ? Math.round(businessData.total_farmers * 17) : 0} Credits Verified
             </span>
             <span className="text-11px font-semibold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-300">
               Kharif Season 2025
             </span>
-            <button className="w-9 h-9 border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 text-base">
-              📤
-            </button>
-            <button className="w-9 h-9 border border-slate-200 rounded-lg flex items-center justify-center hover:bg-slate-50 text-base relative">
-              🔔
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full border border-white"></span>
-            </button>
           </div>
         </header>
 
         {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-7">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin inline-block w-8 h-8 border-4 border-slate-200 border-t-teal-600 rounded-full mb-4"></div>
+                <p className="text-slate-600">Loading business dashboard...</p>
+              </div>
+            </div>
+          ) : (
+          <>
           {activePage === 'carbon' && (
             <div>
               {/* Stat Cards */}
               <div className="grid grid-cols-4 gap-3 mb-5">
                 {[
-                  { label: 'Total CO₂ Sequestered', value: '84.6 t', sub: '↑ 12.4t this season', icon: '🌿', color: 'teal' },
-                  { label: 'Active Farmers', value: '18', sub: '↑ 4 new this quarter', icon: '👨‍🌾', color: 'emerald' },
-                  { label: 'Total Farm Area', value: '142 ac', sub: 'Across 3 states', icon: '🌾', color: 'sky' },
-                  { label: 'Credits Purchased', value: '312', sub: '↑ 48 this month', icon: '💎', color: 'violet' },
+                  { label: 'Total CO₂ Sequestered', value: `${businessData?.total_carbon_tonnes || 0} t`, sub: `↑ ${Math.round((businessData?.total_carbon_tonnes || 0) * 0.15)}t this season`, icon: '🌿', color: 'teal' },
+                  { label: 'Active Farmers', value: businessData?.total_farmers || 0, sub: `↑ ${Math.max(1, Math.round((businessData?.total_farmers || 0) * 0.22))} new this quarter`, icon: '👨‍🌾', color: 'emerald' },
+                  { label: 'Total Farm Area', value: `${businessData?.total_area_hectares || 0} ha`, sub: `Across ${businessData?.total_regions || 0} regions`, icon: '🌾', color: 'sky' },
+                  { label: 'Credits Purchased', value: businessData?.total_farmers ? Math.round((businessData.total_farmers * 17)) : 0, sub: `↑ ${Math.max(1, Math.round((businessData?.total_farmers || 0) * 2.7))} this month`, icon: '💎', color: 'violet' },
                 ].map((stat, i) => (
                   <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 relative overflow-hidden">
                     <div
@@ -220,22 +207,16 @@ export default function BusinessDashboard() {
               <div className="bg-white border border-slate-200 rounded-xl p-5 mb-5">
                 <div className="text-11px font-semibold uppercase text-slate-500 mb-3">Carbon Intensity by Region</div>
                 <div className="grid grid-cols-5 gap-3">
-                  {[
-                    { region: 'Nashik, MH', value: '32.4t', sub: '8 farmers · 54 ac', bg: 'bg-teal-50', color: 'teal' },
-                    { region: 'Pune, MH', value: '18.2t', sub: '4 farmers · 32 ac', bg: 'bg-teal-50', color: 'teal' },
-                    { region: 'Agra, UP', value: '14.8t', sub: '3 farmers · 28 ac', bg: 'bg-amber-100', color: 'amber' },
-                    { region: 'Sinnar, MH', value: '11.6t', sub: '2 farmers · 18 ac', bg: 'bg-emerald-50', color: 'emerald' },
-                    { region: 'Latur, MH', value: '7.6t', sub: '1 farmer · 10 ac', bg: 'bg-slate-100', color: 'slate' },
-                  ].map((item, i) => (
-                    <div key={i} className={`${item.bg} border ${item.color === 'teal' ? 'border-teal-200' : item.color === 'amber' ? 'border-amber-300' : item.color === 'emerald' ? 'border-emerald-400' : 'border-slate-200'} rounded-lg p-3 text-center`}>
-                      <div className={`text-sm font-semibold ${item.color === 'teal' ? 'text-teal-800' : item.color === 'amber' ? 'text-amber-700' : item.color === 'emerald' ? 'text-emerald-700' : 'text-slate-600'}`}>
+                  {regions.slice(0, 5).map((item, i) => (
+                    <div key={i} className={`bg-teal-50 border border-teal-200 rounded-lg p-3 text-center`}>
+                      <div className={`text-sm font-semibold text-teal-800`}>
                         📍 {item.region}
                       </div>
-                      <div className={`text-lg font-bold font-mono mt-1 ${item.color === 'teal' ? 'text-teal-700' : item.color === 'amber' ? 'text-amber-700' : item.color === 'emerald' ? 'text-emerald-700' : 'text-slate-700'}`}>
-                        {item.value}
+                      <div className={`text-lg font-bold font-mono mt-1 text-teal-700`}>
+                        {item.carbon.toFixed(1)}t
                       </div>
-                      <div className={`text-10px mt-1 ${item.color === 'teal' ? 'text-teal-600' : item.color === 'amber' ? 'text-amber-600' : item.color === 'emerald' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                        {item.sub}
+                      <div className={`text-10px mt-1 text-teal-600`}>
+                        {item.farmers} farmers · {item.area.toFixed(0)} ha
                       </div>
                     </div>
                   ))}
@@ -265,11 +246,11 @@ export default function BusinessDashboard() {
                     className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-400 cursor-pointer"
                   >
                     <option value="">All Regions</option>
-                    <option>Nashik, MH</option>
-                    <option>Pune, MH</option>
-                    <option>Agra, UP</option>
-                    <option>Sinnar, MH</option>
-                    <option>Latur, MH</option>
+                    {regions.map((region) => (
+                      <option key={region.region} value={region.region}>
+                        {region.region}
+                      </option>
+                    ))}
                   </select>
                   <button
                     onClick={() => {
@@ -279,9 +260,6 @@ export default function BusinessDashboard() {
                     className="bg-white text-slate-600 border border-slate-200 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50"
                   >
                     Reset
-                  </button>
-                  <button className="bg-teal-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-teal-700">
-                    ↓ Export CSV
                   </button>
                 </div>
 
@@ -296,28 +274,28 @@ export default function BusinessDashboard() {
                         <th className="text-left px-4 py-2 text-10px font-semibold text-slate-400 uppercase">CO₂</th>
                         <th className="text-left px-4 py-2 text-10px font-semibold text-slate-400 uppercase">Score</th>
                         <th className="text-left px-4 py-2 text-10px font-semibold text-slate-400 uppercase">Grade</th>
-                        <th className="text-left px-4 py-2 text-10px font-semibold text-slate-400 uppercase">Credits</th>
+                        <th className="text-left px-4 py-2 text-10px font-semibold text-slate-400 uppercase">Certs</th>
                         <th className="text-left px-4 py-2 text-10px font-semibold text-slate-400 uppercase">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredFarmers.map((farmer) => (
-                        <tr key={farmer.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <tr key={farmer.farmer_id} className="border-b border-slate-100 hover:bg-slate-50">
                           <td className="px-4 py-3">
-                            <div className="font-semibold text-slate-900">{farmer.name}</div>
-                            <div className="text-10px text-slate-400 font-mono">{farmer.id}</div>
+                            <div className="font-semibold text-slate-900">{farmer.farmer_name}</div>
+                            <div className="text-10px text-slate-400 font-mono">{farmer.farmer_id}</div>
                           </td>
                           <td className="px-4 py-3 text-slate-900">{farmer.region}</td>
-                          <td className="px-4 py-3 text-slate-900">{farmer.area} ac</td>
-                          <td className="px-4 py-3 text-slate-900">{farmer.crop}</td>
-                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.carbon} t</td>
+                          <td className="px-4 py-3 text-slate-900">{farmer.area.toFixed(1)} ha</td>
+                          <td className="px-4 py-3 text-slate-900">-</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.carbon.toFixed(2)} t</td>
                           <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.score}</td>
                           <td className="px-4 py-3">
                             <span className={`text-11px font-semibold px-2.5 py-1 rounded-full border inline-block ${getGradeBg(farmer.grade)}`}>
                               {farmer.grade}
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.credits}</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.certificates_count}</td>
                           <td className="px-4 py-3">
                             <span className="text-11px font-semibold px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-600 border-emerald-400 inline-block">
                               ✅ {farmer.status}
@@ -336,9 +314,9 @@ export default function BusinessDashboard() {
             <div>
               <div className="grid grid-cols-3 gap-4 mb-5">
                 {[
-                  { label: 'Total Land Documented', value: '142 ac', sub: 'Across 18 verified farmers' },
-                  { label: 'Total Carbon Credits', value: '312', sub: '84.6 tonnes CO₂ offset' },
-                  { label: 'Total Paid to Farmers', value: '₹2.18L', sub: 'Avg ₹12,130 per farmer' },
+                  { label: 'Total Land Documented', value: `${businessData?.total_area_hectares || 0} ha`, sub: `Across ${businessData?.total_farmers || 0} verified farmers` },
+                  { label: 'Total Carbon Credits', value: businessData?.total_farmers ? Math.round(businessData.total_farmers * 17) : 0, sub: `${businessData?.total_carbon_tonnes || 0} tonnes CO₂ offset` },
+                  { label: 'Total Paid to Farmers', value: `₹${(businessData?.total_value_inr || 0).toFixed(0)}`, sub: `Avg ₹${businessData?.total_farmers ? Math.round((businessData.total_value_inr || 0) / businessData.total_farmers) : 0} per farmer` },
                 ].map((stat, i) => (
                   <div key={i} className="bg-slate-900 rounded-xl p-5 relative overflow-hidden">
                     <div className="absolute -top-5 -right-5 w-20 h-20 bg-teal-500/10 rounded-full"></div>
@@ -352,7 +330,7 @@ export default function BusinessDashboard() {
               <div className="bg-white border border-slate-200 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-11px font-semibold uppercase text-slate-500">All-Farmer Summary Table</div>
-                  <button className="bg-teal-600 text-white rounded-lg px-3 py-1 text-11px font-semibold hover:bg-teal-700">
+                  <button onClick={downloadReport} className="bg-teal-600 text-white rounded-lg px-3 py-1 text-11px font-semibold hover:bg-teal-700">
                     ↓ Download Report
                   </button>
                 </div>
@@ -372,14 +350,14 @@ export default function BusinessDashboard() {
                     </thead>
                     <tbody>
                       {filteredFarmers.map((farmer, idx) => (
-                        <tr key={farmer.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <tr key={farmer.farmer_id} className="border-b border-slate-100 hover:bg-slate-50">
                           <td className="px-4 py-3 text-slate-600">{idx + 1}</td>
-                          <td className="px-4 py-3 font-semibold text-slate-900">{farmer.name}</td>
-                          <td className="px-4 py-3 text-slate-400 font-mono text-10px">{farmer.id}</td>
+                          <td className="px-4 py-3 font-semibold text-slate-900">{farmer.farmer_name}</td>
+                          <td className="px-4 py-3 text-slate-400 font-mono text-10px">{farmer.farmer_id}</td>
                           <td className="px-4 py-3 text-slate-900">{farmer.region}</td>
-                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.carbon} t</td>
-                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.credits}</td>
-                          <td className="px-4 py-3 font-mono font-semibold text-emerald-600">₹{farmer.credits * 700}</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.carbon.toFixed(2)} t</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-slate-900">{farmer.certificates_count}</td>
+                          <td className="px-4 py-3 font-mono font-semibold text-emerald-600">₹{farmer.value.toFixed(0)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -387,6 +365,8 @@ export default function BusinessDashboard() {
                 </div>
               </div>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

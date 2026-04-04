@@ -19,14 +19,14 @@ export default function Cards() {
         {/* Farm Illustration */}
         <div className="w-40 h-32 mb-6 mt-4 relative overflow-hidden rounded-xl">
           <Image
-            src="/farmer.png"
+            src="/assets/images/image2.jpg"
             alt="Farmer"
             fill
             className="object-cover"
           />
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-2">I'm a <span className="text-[#9ed28f]">Farmer</span></h2>
+        <h2 className="text-3xl font-bold text-white mb-2">I&apos;m a <span className="text-[#9ed28f]">Farmer</span></h2>
         <p className="text-white/80 mb-8 max-w-xs font-medium">Earn carbon credits from sustainable farming practices.</p>
 
         {/* Button */}
@@ -52,14 +52,14 @@ export default function Cards() {
         {/* City Illustration */}
         <div className="w-40 h-32 mb-6 mt-4 relative overflow-hidden rounded-xl">
           <Image
-            src="/business.png"
+            src="/assets/images/image1.jpg"
             alt="Business"
             fill
             className="object-cover"
           />
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-2">I'm a <span className="text-blue-300">Business</span></h2>
+        <h2 className="text-3xl font-bold text-white mb-2">I&apos;m a <span className="text-blue-300">Business</span></h2>
         <p className="text-white/80 mb-8 max-w-xs font-medium">Purchase verified carbon credits to offset your emissions.</p>
 
         {/* Button */}
