@@ -1,3 +1,8 @@
+
+![da66cf8a-0851-4cbc-9239-23cac456faa4](https://github.com/user-attachments/assets/5ff02a4e-781a-44ff-b020-e77ae987381c)
+
+
+
 # 🌱 Carbon-Kisan Credit — Climate-Tech Carbon Marketplace
 
 > An AI-powered platform connecting farmers who generate carbon credits with businesses that purchase them — turning sustainable agriculture into verified, tradeable climate action.
@@ -33,6 +38,23 @@ Carbon-Kisan Credit provides:
 - **Competitive pricing** by eliminating the layers of brokers and intermediaries typical in traditional carbon markets.
 
 ---
+
+## The Math Behind the Magic 🔬
+
+Real Soil Organic Carbon (SOC) verification requires deep physical soil sampling. However, biomass (how healthy and dense the plants are) directly correlates with the amount of carbon being sequestered into the soil via roots and decaying matter. We use **NDVI** as the measure of biomass.
+
+In the `_extrapolate_carbon` function, we utilize a simplified linear regression formula often found in remote sensing preliminary studies:
+
+$$SOC = \alpha \times NDVI_{mean} + \beta$$
+
+Where:
+- **SOC** is the Soil Organic Carbon in tonnes per hectare.
+- **NDVI_mean** is the average vegetation index for the farm over a year.
+- **α** and **β** are correlation constants (which you can adjust to calibrate your model if you introduce hardware sensor data later).
+
+---
+
+## Project Workflow
 
 <img width="1408" height="768" alt="Carbon_Kishan Workflow" src="https://github.com/user-attachments/assets/7b48a8fc-f2b5-4187-a75f-93d66f2d927e" />
 
