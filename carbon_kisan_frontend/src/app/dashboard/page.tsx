@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Leaf, Activity, Wind, IndianRupee, FileText, ChevronRight, AlertCircle, Loader, MapPin, Wallet, Award, MessageSquare, Settings, LogOut } from 'lucide-react';
 import KisanSaathiChat from '@/components/chat/KisanSaathiChat';
+import CertificatesPanel from '@/components/certificates/CertificatesPanel';
 
 // Dynamically import the map to avoid SSR issues with Leaflet
 const FarmMap = dynamic(() => import('@/components/map/FarmMap'), {
@@ -508,14 +509,22 @@ export default function Dashboard() {
                           </div>
                         </div>
 
-                        <div className="mt-auto pt-4 border-t border-gray-100">
+                        <div className="mt-auto pt-4 border-t border-gray-100 space-y-3">
                           <a 
                             href={`${API_BASE}/docs/certificate/${mrvResults.certificate_id}`}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="w-full bg-green-700 hover:bg-green-800 text-white p-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
                           >
                             <FileText size={20} />
-                            Generate E-Certificate
+                            View Certificate
+                          </a>
+                          <a 
+                            href={`${API_BASE}/docs/certificate/${mrvResults.certificate_id}/download`}
+                            download={`certificate-${mrvResults.certificate_id}.pdf`}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                          >
+                            📥 Download PDF
                           </a>
                         </div>
                       </div>
@@ -545,10 +554,15 @@ export default function Dashboard() {
             {/* Certificates Tab - Placeholder */}
             {activeTab === 'certificates' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-2xl p-8 border border-green-100 shadow-md text-center">
-                  <Award className="mx-auto mb-4 text-amber-600" size={48} />
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Certificates</h2>
-                  <p className="text-gray-600">Your generated e-certificates and verification records coming soon.</p>
+                <div className="bg-white rounded-2xl p-6 border border-green-100 shadow-md">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Award className="w-8 h-8 text-green-600" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">My Certificates</h2>
+                      <p className="text-sm text-gray-600">View and download your verified carbon certificates</p>
+                    </div>
+                  </div>
+                  <CertificatesPanel farmerId="demo_farmer_001" />
                 </div>
               </div>
             )}

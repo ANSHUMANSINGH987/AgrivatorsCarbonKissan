@@ -23,9 +23,27 @@ class DigitalMRVEngine:
         try:
             print("[INFO] Fetching satellite data for the selected farm...")
             
-            # 1. Define Area of Interest (AOI)
-            coords = geojson_polygon['coordinates']
-            aoi = ee.Geometry.Polygon(coords)
+            # 1. Define Area of Interest (AOI) - handle both MultiPolygon and Polygon formats
+            coords = geojson_polygon.get('coordinates', [])
+            
+            # Validate coordinates
+            if not coords or not coords[0]:
+                raise ValueError("No valid coordinates provided in geojson")
+            
+            # Handle nested polygon structure from Earth Engine
+            # If it's a list of lists of lists, it's already in the right format
+            # If it's part of a MultiPolygon, take the first polygon
+            if isinstance(coords[0][0], (list, tuple)) and isinstance(coords[0][0][0], (int, float)):
+                # Format: [[[lon, lat], [lon, lat], ...], ...]  - Single polygon
+                polygon_coords = coords
+            else:
+                # Handle MultiPolygon or other nested structures
+                polygon_coords = coords[0] if coords else []
+            
+            if not polygon_coords:
+                raise ValueError("Invalid coordinate structure in geojson")
+                
+            aoi = ee.Geometry.Polygon(polygon_coords)
 
             # 2. Set Date Range (Last 12 months)
             end_date = datetime.date.today().strftime('%Y-%m-%d')

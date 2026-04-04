@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 
 class PolygonCoordinates(BaseModel):
-    coordinates: List[List[List[float]]] 
+    coordinates: List[Any]  # Accept any coordinate structure, validate in service
 
 class MRVRequest(BaseModel):
     farmer_id: str
