@@ -42,12 +42,26 @@ async def startup_event():
     except Exception as e:
         print(f"[ERROR] Firebase connection failed: {e}")
     
-    # 2. Initialize Earth Engine
+    # Earth Engine block :
+@app.on_event("startup")
+async def startup_event():
+    # ... (Firebase code remains the same) ...
+
+    # 2. Initialize Earth Engine using Service Account
     try:
-        ee.Initialize(project=settings.GEE_PROJECT_ID)
-        print("[OK] Earth Engine Initialized.")
+        import json
+        # Load the JSON file path from settings or env
+        key_path = settings.FIREBASE_CREDENTIALS_PATH 
+        
+        with open(key_path) as f:
+            key_data = json.load(f)
+            
+        # Use the service account email from the JSON and the file path
+        credentials = ee.ServiceAccountCredentials(key_data['client_email'], key_path)
+        ee.Initialize(credentials, project=settings.GEE_PROJECT_ID)
+        print(f"[OK] Earth Engine Initialized with Project: {settings.GEE_PROJECT_ID}")
     except Exception as e:
-        print(f"[WARNING] Earth Engine Auth required. Error: {e}")
+        print(f"[ERROR] Earth Engine failed to initialize: {e}")
 
 # --- Register Routes ---
 app.include_router(api_router, prefix="/api")
