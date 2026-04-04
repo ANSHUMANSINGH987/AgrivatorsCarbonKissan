@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-pydantic
-pydantic-settings
-earthengine-api
-firebase-admin
-google-generativeai
-pdfkit
-jinja2
