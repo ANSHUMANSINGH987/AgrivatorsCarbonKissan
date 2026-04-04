@@ -54,6 +54,8 @@ Where:
 
 ---
 
+## Project Workflow
+
 <img width="1408" height="768" alt="Carbon_Kishan Workflow" src="https://github.com/user-attachments/assets/7b48a8fc-f2b5-4187-a75f-93d66f2d927e" />
 
 ### Phase 1 — Discovery & Design
