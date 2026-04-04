@@ -1,3 +1,7 @@
+
+![Carbon_Kisaan_logo_](https://github.com/user-attachments/assets/c94be3f9-ccab-4a21-85be-bee1de3041dd)
+
+
 # 🌱 Carbon-Kisan Credit — Climate-Tech Carbon Marketplace
 
 > An AI-powered platform connecting farmers who generate carbon credits with businesses that purchase them — turning sustainable agriculture into verified, tradeable climate action.
