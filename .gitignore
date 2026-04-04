@@ -1,4 +1,43 @@
-firebase-adminsdk.json
-venv/
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# Logs
+backend.log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation files
+INTEGRATION_SUMMARY.md
+
+# Virtual Environment
+venv/
+env/
+*.pyc
 __pycache__/
+*.egg-info/
+
+# Node modules
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Firebase
+firebase-adminsdk.json
+
+# OS
+Thumbs.db
+.DS_Store
