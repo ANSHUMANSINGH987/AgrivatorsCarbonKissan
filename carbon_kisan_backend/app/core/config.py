@@ -24,9 +24,18 @@ class Settings(BaseSettings):
         case_sensitive=True
     )
 
-    @property
+  @property
     def FIREBASE_CREDENTIALS_PATH(self) -> str:
-        """Returns the absolute path to Firebase credentials, computed at runtime."""
+        """Returns the absolute path to Firebase credentials, prioritizing Render's secret path."""
+        # 1. Check the environment variable you set in Render Dashboard
+        env_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+        if env_path and os.path.exists(env_path):
+            return env_path
+            
+        # 2. Check the standard Render secret location directly
+        render_secret = "/etc/secrets/firebase-adminsdk.json"
+        if os.path.exists(render_secret):
+            return render_secret
+            
+        # 3. Fallback to local development path
         return str(BASE_DIR / "firebase-adminsdk.json")
-
-settings = Settings()
